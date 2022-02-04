@@ -6,7 +6,7 @@ import { Button, IconButton, TextField, Grid, Paper } from "@mui/material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import PhoneIcon from "@mui/icons-material/Phone";
 import Videos from "./Videos";
-import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 
 // const socket = io.connect('https://rig-zig.herokuapp.com/');
 const socket = io.connect("http://localhost:8080");
@@ -27,6 +27,7 @@ class AudioClass extends React.Component {
       bassNode: null,
     };
     this.handleChangeVolume = this.handleChangeVolume.bind(this);
+    this.handleChangeBass = this.handleChangeBass.bind(this);
     // this.handleChangePreampDrive = this.handleChangePreampDrive(this);
     this.makePreAmpCurve = this.makePreAmpCurve.bind(this);
     this.pulseCurve = this.pulseCurve.bind(this);
@@ -123,8 +124,10 @@ class AudioClass extends React.Component {
         const bassEQ = new BiquadFilterNode(context, {
           type: "lowshelf",
           frequency: 500,
-          gain: this.state.bassValue,
+          gain: this.state.bassValue * 1,
         });
+        this.setState({ bassNode: bassEQ });
+        
         const midEQ = new BiquadFilterNode(context, {
           type: "peaking",
           Q: Math.SQRT1_2,
@@ -141,13 +144,13 @@ class AudioClass extends React.Component {
         });
         const overdriveEQ = context.createWaveShaper();
         overdriveEQ.curve = this.makeOverdriveCurve(this.state.driveValue * 1);
-        overdriveEQ.oversample = '1x'
+        overdriveEQ.oversample = "1x";
 
         source
           .connect(compression)
           .connect(preamp)
           .connect(this.state.preampDriveNode)
-          .connect(bassEQ)
+          .connect(this.state.bassNode)
           .connect(midEQ)
           .connect(trebleEQ)
           .connect(overdriveEQ)
@@ -172,9 +175,9 @@ class AudioClass extends React.Component {
     this.setState({ preampDriveValue: value });
   }
 
-  // changeBass(value) {
-  //   this.setState({ bassValue: value });
-  // }
+  changeBass(value) {
+    this.setState({ bassValue: value });
+  }
 
   async handleChangeVolume(event) {
     let newValue = event.target.value;
@@ -198,12 +201,13 @@ class AudioClass extends React.Component {
     this.state.preampDriveNode.preampDrive.oversample = "x4";
   }
 
-  // async handleChangeBass(event) {
-  //   let newValue = event.target.value;
-  //   await this.changeBass(event.target.value);
-  //   let bassNode = this.state.bassNode;
-  //   bassNode.gain.value = newValue;
-  // }
+  async handleChangeBass(event) {
+    let newValue = event.target.value;
+    await this.changeBass(event.target.value);
+    let bassNode = this.state.bassNode;
+    bassNode.gain.value = newValue;
+    await this.setState({ bassNode });
+  }
 
   // handleChangePreampDrive(event){
   //   // let newValue = event.target.value;
@@ -228,7 +232,7 @@ class AudioClass extends React.Component {
   // }
 
   render() {
-    const { handleChangeVolume, handleChangePreamp } = this;
+    const { handleChangeVolume, handleChangePreamp, handleChangeBass } = this;
     const {
       volumeValue,
       stream,
@@ -240,28 +244,31 @@ class AudioClass extends React.Component {
     return (
       <>
         <div id="volume">
-        <label htmlFor="volumeRange"><VolumeUpIcon /> Volume</label>
-        <input
-          type="range"
-          min="0"
-          max="4"
-          value={volumeValue}
-          step=".1"
-          id="volumeRange"
-          onChange={handleChangeVolume}
-        ></input>
+          <label htmlFor="volumeRange">
+            <VolumeUpIcon /> Volume
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="4"
+            value={volumeValue}
+            step=".1"
+            id="volumeRange"
+            onChange={handleChangeVolume}
+          ></input>
         </div>
-
-        {/* <label htmlFor="bassRange">Bass Level</label>
-        <input
-          type="range"
-          min="-10"
-          max="9"
-          value={bassValue}
-          step="1"
-          id="bassRange"
-          onChange={handleChangePreamp(bassValue)}
-        ></input> */}
+        <div id="bass">
+          <label htmlFor="bassRange">Bass Level</label>
+          <input
+            type="range"
+            min="-10"
+            max="9"
+            value={bassValue}
+            step="1"
+            id="bassRange"
+            onChange={handleChangeBass}
+          ></input>
+        </div>
         {/* <label htmlFor="hi">hi</label>
         <input
           type="range"
